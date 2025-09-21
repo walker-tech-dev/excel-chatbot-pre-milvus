@@ -1,212 +1,165 @@
-# 📊 Excel Financial Chatbot
+# 📊 Excel Financial Chatbot - Pre-Milvus Version
 
-An AI-powered chatbot that analyzes Excel and CSV files using RAG (Retrieval-Augmented Generation) architecture with multi-file relationship analysis.
+## 🎯 Overview
+
+This is the **original version** of the Excel Financial Chatbot before vector database (Milvus) integration was added. This version represents the foundational chatbot with basic RAG architecture using simple file processing and session state management.
 
 ## 🌟 Features
 
-### 🤖 AI-Powered Analysis
-- **Llama 3.2 3B** integration for natural language processing
-- **RAG Architecture** for context-aware responses
-- **Multi-file relationship detection** using embeddings
-- **Financial health scoring** and trend analysis
+### ✅ What This Version Includes:
+- **Basic Streamlit Interface** - Clean, user-friendly web interface
+- **Excel File Processing** - Upload and process multiple Excel/CSV files
+- **Simple RAG Architecture** - Basic retrieval and generation without vector storage
+- **Ollama Integration** - Local LLM (Llama 3.2 3B) for chat responses
+- **Session State Management** - Data stored in browser session
+- **Multi-file Support** - Process multiple financial datasets
+- **Real-time Chat** - Interactive Q&A about your data
 
-### 📁 Multi-Format Support
-- **Excel files** (.xlsx, .xls) with multiple sheets
-- **CSV files** (.csv)
-- **Batch processing** of multiple files
-- **Cross-file correlation analysis**
-
-### 🔍 Advanced Analytics
-- **Similarity analysis** between files using vector embeddings
-- **Agno framework integration** for enhanced financial insights
-- **Anomaly detection** using statistical methods
-- **Interactive visualizations** and charts
-
-### 🖥️ User Interface
-- **Streamlit web interface** with modern design
-- **Real-time processing** with progress indicators
-- **Multi-tab layout** for organized workflow
-- **Responsive design** for desktop and mobile
-
-## 🏗️ Architecture
-
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   File Upload   │───▶│   Processing    │───▶│   Vector DB     │
-│   (Excel/CSV)   │    │   & Embedding   │    │   (Milvus)      │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-                                │
-                                ▼
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Chat UI       │◀───│   LLM Response  │◀───│   RAG Retrieval │
-│   (Streamlit)   │    │   (Llama 3.2)   │    │   & Context     │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-```
+### ❌ What This Version Doesn't Include:
+- Vector database (Milvus) storage
+- Advanced embedding strategies
+- Persistent data storage
+- Performance optimizations
+- Multi-tier processing options
+- Enhanced business intelligence features
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-- **Python 3.8+**
-- **Docker** (for Milvus)
-- **Ollama** with Llama 3.2 3B model
+- Python 3.8+
+- Ollama installed with Llama 3.2 3B model
+- Streamlit
 
 ### Installation
 
 1. **Clone the repository:**
-   ```bash
-   git clone <your-repo-url>
-   cd excel-financial-chatbot
-   ```
+```bash
+git clone https://github.com/walker-tech-dev/excel-chatbot-pre-milvus.git
+cd excel-chatbot-pre-milvus
+```
 
 2. **Install dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. **Start Milvus database:**
-   ```bash
-   docker-compose up -d
-   ```
-
-4. **Install Ollama and Llama 3.2 3B:**
-   ```bash
-   # Install Ollama (Windows)
-   winget install Ollama.Ollama
-   
-   # Pull Llama 3.2 3B model
-   ollama pull llama3.2:3b
-   ```
-
-5. **Run the application:**
-   ```bash
-   streamlit run streamlit_app.py
-   ```
-
-6. **Open your browser** and go to `http://localhost:8501`
-
-## 💻 Usage
-
-### 1. Upload Files
-- Navigate to the **"Upload Files"** tab
-- Select multiple Excel or CSV files
-- Click **"Process All Files & Analyze Relationships"**
-
-### 2. View Relationships
-- Check the **"Relationships"** tab to see:
-  - File similarity scores
-  - Cross-file correlations
-  - Agno advanced analysis
-  - Financial health insights
-
-### 3. Chat Analysis
-- Use the **"Chat"** tab to ask questions like:
-  - "Compare my files and find relationships"
-  - "What are the revenue trends across files?"
-  - "Identify discrepancies between datasets"
-
-### 4. Analytics Dashboard
-- Review the **"Analytics"** tab for:
-  - Data overview and statistics
-  - Interactive charts and visualizations
-  - Per-file analysis details
-
-## 📋 File Structure
-
-```
-chatbot/
-├── streamlit_app.py           # Main Streamlit application
-├── agno_integration.py        # Agno framework integration
-├── milvus_setup.py           # Milvus database setup
-├── excel_to_milvus.py        # Excel processing pipeline
-├── agno_app.py               # Flask API server
-├── requirements.txt          # Python dependencies
-├── docker-compose.yml        # Milvus Docker setup
-├── test_*.py                # Test files
-└── README.md                # This file
+```bash
+pip install -r requirements.txt
 ```
 
-## 🔧 Configuration
+3. **Start Ollama:**
+```bash
+ollama pull llama3.2:3b
+ollama serve
+```
 
-### Milvus Database
-- **Host:** localhost
-- **Port:** 19530
-- **Collection:** excel_vectors
+4. **Run the application:**
+```bash
+streamlit run streamlit_app.py
+```
 
-### Ollama Model
-- **Model:** llama3.2:3b
-- **API:** localhost:11434
-- **Embedding size:** 256 dimensions
+5. **Open your browser:**
+Navigate to `http://localhost:8501`
 
-### Streamlit App
-- **Port:** 8501
-- **Theme:** Auto-detect
-- **Max file size:** 200MB per file
+## 📁 Project Structure
 
-## 🧪 API Endpoints
+```
+excel-chatbot-pre-milvus/
+├── streamlit_app.py          # Main Streamlit application (41KB)
+├── agno_app.py              # Core application logic
+├── agno_integration.py      # Business logic integration
+├── requirements.txt         # Python dependencies
+├── Excel/                   # Sample Excel files directory
+├── README.md               # This file
+└── docker-compose.yml      # Docker setup (optional)
+```
 
-### Flask API (Optional)
-- `POST /ingest_excel` - Upload and process Excel files
-- `POST /chat` - Chat with the AI assistant
+## 💡 Usage
 
-## 🔍 Key Technologies
+1. **Upload Files:** Use the file uploader to add your Excel/CSV files
+2. **Process Data:** Click "Process Files" to analyze your data
+3. **Ask Questions:** Type questions about your financial data
+4. **Get Insights:** Receive AI-powered responses based on your data
 
-- **🐍 Python 3.8+** - Core programming language
-- **🦙 Llama 3.2 3B** - Large language model
-- **🗄️ Milvus** - Vector database for embeddings
-- **🎨 Streamlit** - Web interface framework
-- **📊 Pandas** - Data manipulation and analysis
-- **🔢 NumPy** - Numerical computing
-- **🐳 Docker** - Containerization for Milvus
-- **🤖 Ollama** - Local LLM inference
+### Example Questions:
+- "What is the total revenue by customer?"
+- "Which customers have the highest support tickets?"
+- "Show me customer health scores"
+- "What are the main product lines?"
 
-## 📈 Use Cases
+## 🔄 Evolution Path
 
-### Financial Analysis
-- **Multi-period comparison** across financial statements
-- **Budget vs. actual analysis** with variance detection
-- **KPI tracking** and trend identification
-- **Risk assessment** through anomaly detection
+This repository represents the **starting point** of the Excel Financial Chatbot. For the full-featured version with:
 
-### Business Intelligence
-- **Cross-departmental data analysis**
-- **Operational metrics correlation**
-- **Performance benchmarking**
-- **Data quality assessment**
+- **Vector Database Integration** (Milvus)
+- **Advanced Performance Optimizations** 
+- **Multi-tier Processing** (Ultra-fast, Fast, Enhanced)
+- **Business Intelligence Features**
+- **Cross-dataset Correlation**
 
-### Data Integration
-- **File similarity assessment**
-- **Duplicate detection** across datasets
-- **Data consolidation opportunities**
-- **Schema alignment analysis**
+See the main repository: [excel-financial-chatbot](https://github.com/walker-tech-dev/excel-financial-chatbot)
 
-## 🤝 Contributing
+## 📊 Technical Details
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+### Architecture
+- **Frontend:** Streamlit web interface
+- **Backend:** Python with Pandas for data processing
+- **AI Model:** Ollama Llama 3.2 3B (local)
+- **Data Storage:** Browser session state (temporary)
+- **File Support:** Excel (.xlsx) and CSV files
 
-## 📄 License
+### Limitations
+- Data is not persistent (lost on page refresh)
+- No vector similarity search
+- Basic text processing without embeddings
+- Limited cross-file correlation
+- No performance optimizations for large datasets
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+## 🛠️ Development
+
+This version is ideal for:
+- **Learning RAG fundamentals**
+- **Understanding basic chatbot architecture**
+- **Prototyping financial data analysis**
+- **Educational purposes**
+- **Simple Excel data querying**
+
+## 🔗 Related Projects
+
+- **Main Repository:** [excel-financial-chatbot](https://github.com/walker-tech-dev/excel-financial-chatbot) - Full-featured version with Milvus integration
+- **Comparison:** This pre-Milvus version vs the enhanced version shows the evolution from basic to advanced RAG architecture
+
+## 📈 Performance
+
+- **Processing Speed:** Fast for small datasets (< 1000 rows)
+- **Memory Usage:** Low (session state only)
+- **Scalability:** Limited (no persistent storage)
+- **Query Speed:** Good for simple questions
+
+## 🆚 Version Comparison
+
+| Feature | Pre-Milvus (This Repo) | Full Version |
+|---------|----------------------|--------------|
+| Storage | Session State | Vector Database |
+| Speed | Basic | Optimized (3 tiers) |
+| Persistence | ❌ | ✅ |
+| Embeddings | ❌ | ✅ Advanced |
+| Business Intelligence | Basic | ✅ Enhanced |
+| Performance | Good for small data | Scales to 32K+ records |
+| Setup Complexity | Simple | Advanced |
+| Learning Curve | Easy | Moderate |
+
+## 📝 License
+
+MIT License - Feel free to use and modify for your projects.
+
+## 👨‍💻 Author
+
+**walker-tech-dev**
+- GitHub: [@walker-tech-dev](https://github.com/walker-tech-dev)
 
 ## 🙏 Acknowledgments
 
-- **Meta** for Llama 3.2 model
-- **Zilliz** for Milvus vector database
-- **Streamlit** team for the excellent web framework
-- **Ollama** for local LLM inference
-- **Agno** framework for enhanced analytics
-
-## 📞 Support
-
-If you encounter any issues or have questions:
-
-1. Check the [Issues](../../issues) page
-2. Create a new issue with detailed description
-3. Include error logs and system information
+- Ollama team for the excellent local LLM framework
+- Streamlit for the fantastic web framework
+- Meta for the Llama models
 
 ---
 
-**Built with ❤️ for financial data analysis and business intelligence**
+*This is the foundational version - simple, educational, and effective for basic Excel data analysis with AI.*
