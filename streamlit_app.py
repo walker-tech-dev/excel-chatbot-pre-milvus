@@ -494,6 +494,65 @@ def process_multiple_files(uploaded_files):
         st.error(f"❌ Error processing file: {e}")
         return False
 
+def get_relevant_data_for_query(user_question, max_rows_per_file=15):
+    """
+    Get relevant data from all files based on the user's question.
+    This function provides more targeted data to avoid context overflow.
+    """
+    relevant_data = []
+    
+    if not st.session_state.processed_data:
+        return []
+    
+    # Keywords that suggest the user wants to see more data
+    data_keywords = ['search', 'all', 'show', 'list', 'find', 'data', 'rows', 'records']
+    wants_more_data = any(keyword in user_question.lower() for keyword in data_keywords)
+    
+    rows_to_show = max_rows_per_file if wants_more_data else 5
+    
+    for sheet_name, data in st.session_state.processed_data.items():
+        df = data['dataframe']
+        filename = data['filename']
+        
+        # Always include basic info
+        file_info = {
+            'filename': filename,
+            'sheet_name': sheet_name,
+            'total_rows': len(df),
+            'columns': df.columns.tolist(),
+            'sample_data': df.head(rows_to_show).to_dict('records') if not df.empty else []
+        }
+        
+        # Add numeric summaries
+        numeric_cols = df.select_dtypes(include=['number']).columns
+        if len(numeric_cols) > 0:
+            file_info['numeric_summary'] = {}
+            for col in numeric_cols:
+                try:
+                    file_info['numeric_summary'][col] = {
+                        'min': float(df[col].min()),
+                        'max': float(df[col].max()),
+                        'mean': float(df[col].mean()),
+                        'count': int(df[col].count())
+                    }
+                except:
+                    continue
+        
+        # Add categorical summaries
+        categorical_cols = df.select_dtypes(include=['object']).columns
+        if len(categorical_cols) > 0:
+            file_info['categorical_summary'] = {}
+            for col in categorical_cols[:3]:  # Limit to prevent context overflow
+                try:
+                    top_values = df[col].value_counts().head(5).to_dict()
+                    file_info['categorical_summary'][col] = top_values
+                except:
+                    continue
+        
+        relevant_data.append(file_info)
+    
+    return relevant_data
+
 def chat_with_bot(user_question):
     """Send question to the chatbot and get response with cross-file analysis"""
     try:
@@ -501,33 +560,69 @@ def chat_with_bot(user_question):
         context_parts = []
         
         if st.session_state.excel_uploaded and st.session_state.processed_data:
-            context_parts.append("Available data files and their relationships:")
+            context_parts.append("=== MULTI-FILE DATA CONTEXT ===")
+            context_parts.append("You have access to the following uploaded files and their data:")
+            
+            # Get relevant data for the user's question
+            relevant_files = get_relevant_data_for_query(user_question)
+            
+            for file_info in relevant_files:
+                filename = file_info['filename']
+                sheet_name = file_info['sheet_name']
+                total_rows = file_info['total_rows']
+                columns = file_info['columns']
+                sample_data = file_info['sample_data']
+                
+                context_parts.append(f"\n--- FILE: {filename} | SHEET: {sheet_name} ---")
+                context_parts.append(f"Total Rows: {total_rows} | Columns: {len(columns)}")
+                context_parts.append(f"Column Names: {', '.join(columns)}")
+                
+                # Include sample data
+                if sample_data:
+                    context_parts.append(f"Sample Data ({len(sample_data)} rows):")
+                    for i, row in enumerate(sample_data):
+                        row_str = ", ".join([f"{k}: {v}" for k, v in list(row.items())[:8]])  # Limit columns
+                        context_parts.append(f"  Row {i+1}: {row_str}")
+                
+                # Include numeric summaries
+                if 'numeric_summary' in file_info:
+                    context_parts.append("Numeric Column Statistics:")
+                    for col, stats in file_info['numeric_summary'].items():
+                        stats_str = f"min={stats['min']:.2f}, max={stats['max']:.2f}, avg={stats['mean']:.2f}, count={stats['count']}"
+                        context_parts.append(f"  {col}: {stats_str}")
+                
+                # Include categorical summaries
+                if 'categorical_summary' in file_info:
+                    context_parts.append("Categorical Column Top Values:")
+                    for col, values in file_info['categorical_summary'].items():
+                        top_vals = ", ".join([f"{k}({v})" for k, v in list(values.items())[:3]])
+                        context_parts.append(f"  {col}: {top_vals}")
             
             # Add file summaries
+            context_parts.append(f"\n=== FILE SUMMARIES ===")
             for filename, summary in st.session_state.file_summaries.items():
                 context_parts.append(f"File: {filename} - {summary['total_rows']} rows, {summary['total_columns']} columns")
+                context_parts.append(f"  Sheets: {', '.join(summary['sheets'])}")
             
             # Add relationship information
             if st.session_state.file_relationships:
-                context_parts.append("\nFile relationships (similarity scores):")
-                top_relationships = st.session_state.file_relationships[:3]  # Top 3
+                context_parts.append("\n=== FILE RELATIONSHIPS ===")
+                top_relationships = st.session_state.file_relationships[:5]  # Top 5
                 for rel in top_relationships:
                     context_parts.append(f"{rel['file1']} ↔ {rel['file2']}: {rel['similarity_percentage']:.1f}% similar")
-            
-            # Add sample data from each file
-            context_parts.append("\nSample data structures:")
-            for sheet_name, data in list(st.session_state.processed_data.items())[:3]:  # First 3 sheets
-                df = data['dataframe']
-                context_parts.append(f"{sheet_name}: Columns: {', '.join(df.columns.tolist()[:5])}")  # First 5 columns
         
         # Construct system message with context
         system_message = """You are a financial analyst AI assistant specialized in multi-file data analysis. 
         You help analyze Excel and CSV data, identify relationships between files, provide insights about 
         financial metrics, trends, and cross-file correlations. You can compare data across multiple files 
-        and identify patterns, discrepancies, or complementary information."""
+        and identify patterns, discrepancies, or complementary information.
+
+        IMPORTANT: You have access to the complete data from ALL uploaded files. When users ask to "search all sheets" 
+        or analyze across files, use the actual data provided in the context below to give specific, data-driven answers.
+        You can reference specific values, perform calculations, and identify trends across all the files."""
         
         if context_parts:
-            system_message += f"\n\nContext about uploaded files:\n{chr(10).join(context_parts)}"
+            system_message += f"\n\n{chr(10).join(context_parts)}"
         
         # Generate response using Ollama
         response = ollama.chat(model='llama3.2:3b', messages=[
@@ -639,6 +734,12 @@ with tab1:
 with tab2:
     st.header("💬 Chat with Your Data")
     
+    # Show file access info
+    if st.session_state.excel_uploaded and len(st.session_state.file_summaries) > 1:
+        st.info(f"✅ **Multi-File Access Enabled**: Ollama can now search across ALL {len(st.session_state.file_summaries)} uploaded files and their sheets. Ask questions like 'search all sheets' or 'show me data from all files'.")
+    elif st.session_state.excel_uploaded:
+        st.info("✅ **File Access Enabled**: Ollama has access to your uploaded file and all its sheets.")
+    
     # Display chat history
     for message in st.session_state.chat_history:
         if message["role"] == "user":
@@ -693,16 +794,34 @@ with tab2:
                     st.session_state.chat_history.append({"role": "user", "content": "Based on the relationships between my files, what consolidation or data integration opportunities do you see?"})
                     st.rerun()
         
-        st.markdown("**📈 Single File Analysis:**")
+        st.markdown("**📈 Multi-File Search & Analysis:**")
         col1, col2 = st.columns(2)
         
         with col1:
-            if st.button("💰 What are the revenue trends?"):
-                st.session_state.chat_history.append({"role": "user", "content": "What are the revenue trends?"})
+            if st.button("� Search all sheets for specific data"):
+                st.session_state.chat_history.append({"role": "user", "content": "Search all sheets for customer health scores and revenue data. Show me the top 5 customers by revenue."})
                 st.rerun()
             
+            if st.button("�💰 What are the revenue trends?"):
+                st.session_state.chat_history.append({"role": "user", "content": "What are the revenue trends across all my files?"})
+                st.rerun()
+            
+            if st.button("📊 Show all available data"):
+                st.session_state.chat_history.append({"role": "user", "content": "Show me all the data available across all my uploaded files. List the sheets and their contents."})
+                st.rerun()
+        
+        with col2:
             if st.button("📈 Calculate profit margins"):
-                st.session_state.chat_history.append({"role": "user", "content": "Calculate profit margins from the data"})
+                st.session_state.chat_history.append({"role": "user", "content": "Calculate profit margins from the data across all files"})
+                st.rerun()
+            
+            if st.button("🎯 Find customers in multiple files"):
+                st.session_state.chat_history.append({"role": "user", "content": "Find customers that appear in multiple files and compare their data."})
+                st.rerun()
+            
+            if st.button("📋 Generate comprehensive report"):
+                st.session_state.chat_history.append({"role": "user", "content": "Generate a comprehensive report analyzing all my uploaded files and their relationships."})
+                st.rerun()
                 st.rerun()
         
         with col2:
